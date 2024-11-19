@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circular Control Stick</title>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0; /* Change the background color as needed */
+    }
+
+    #control-container {
+      position: relative;
+      width: 400px; /* Adjust the overall size as needed */
+      height: 400px; /* Adjust the overall size as needed */
+      border-radius: 50%;
+      border: 2px solid black; /* Outline style for the outer circle */
+      box-sizing: border-box;
+      touch-action: none; /* Disable touch actions to prevent scrolling on touch devices */
+      overflow: hidden; /* Hide the overflow of the lines */
+    }
+
+    #inner-stick {
+      position: absolute;
+      width: 80px; /* Adjust the inner control stick size as needed */
+      height: 80px; /* Adjust the inner control stick size as needed */
+      background-color: black; /* Filled color for the inner circle */
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      touch-action: none; /* Disable touch actions on the inner stick */
+      user-select: none; /* Disable text selection on the inner stick */
+    }
+
+    .line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background-color: black;
+      transform-origin: 50% 50%;
+      left: 0;
+      top: 50%;
+    }
+
+    .line:nth-child(1) {
+      transform: rotate(22.5deg);
+    }
+
+    .line:nth-child(2) {
+      transform: rotate(67.5deg);
+    }
+
+    .line:nth-child(3) {
+      transform: rotate(112.5deg);
+    }
+
+    .line:nth-child(4) {
+      transform: rotate(157.5deg);
+    }
+
+    .line:nth-child(5) {
+      transform: rotate(202.5deg);
+    }
+
+    .line:nth-child(6) {
+      transform: rotate(247.5deg);
+    }
+
+    .line:nth-child(7) {
+      transform: rotate(292.5deg);
+    }
+
+    .line:nth-child(8) {
+      transform: rotate(337.5deg);
+    }
+
+    .text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      font-size: 15px;
+      color: black;
+      transform-origin: 50% 50%;
+    }
+
+    #text-forward {
+      top: 5px;
+    }
+
+    #text-forward-right {
+      top: 25%;
+      left: 20%;
+      transform: rotate(-45deg);
+    }
+
+    #text-forward-left {
+      top: 25%;
+      right: 20%;
+      transform: rotate(45deg);
+    }
+
+    #text-right {
+      left: 45%;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+    }
+
+    #text-left {
+      right: 45%;
+      top: 50%;
+      transform: translateY(-50%) rotate(90deg);
+    }
+
+    #text-backward {
+      bottom: 5px;
+    }
+
+    #text-backward-right {
+      bottom: 25%;
+      left: 20%;
+      transform: rotate(45deg);
+    }
+
+    #text-backward-left {
+      bottom: 25%;
+      right: 20%;
+      transform: rotate(-45deg);
+    }
+  </style>
+</head>
+<body>
+<!-- Image clickable -->
+<a href="index.html" style="position: absolute; top: 10px; left: 10px;">
+  <img src="arrow.png" alt="Klickbarer Pfeil" style="width: 150px; height: 100px;">
+</a>
+
+<div id="control-container">
+
+  <!-- Lines to divide the outer circle -->
+  <div class="line"></div>
+  <div class="line"></div>
+  <div class="line"></div>
+  <div class="line"></div>
+
+  <!-- Text elements -->
+  <div class="text" id="text-forward">Forward</div>
+  <div class="text" id="text-forward-left">Forward-Left</div>
+  <div class="text" id="text-forward-right">Forward-Right</div>
+  <div class="text" id="text-left">Left</div>
+  <div class="text" id="text-right">Right</div>
+  <div class="text" id="text-backward">Backward</div>
+  <div class="text" id="text-backward-left">Backward-Left</div>
+  <div class="text" id="text-backward-right">Backward-Right</div>
+
+  <!-- Inner stick -->
+  <div id="inner-stick"></div>
+
+</div>
+
+<script>
+  // JavaScript for handling control stick movement
+  var controlContainer = document.getElementById('control-container');
+  var innerStick = document.getElementById('inner-stick');
+
+  // Variables to store the initial position and touch/mouse state
+  var initialX, initialY, isTouched = false;
+
+  // Event listeners for touch events
+  innerStick.addEventListener('touchstart', handleTouchStart);
+  innerStick.addEventListener('touchmove', handleTouchMove);
+  innerStick.addEventListener('touchend', handleTouchEnd);
+
+  // Event listeners for mouse events
+  innerStick.addEventListener('mousedown', handleMouseDown);
+  window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('mouseup', handleMouseUp);
+
+  // Touch event handlers
+  function handleTouchStart(event) {
+    isTouched = true;
+    var touch = event.touches[0];
+    initialX = touch.clientX - controlContainer.offsetLeft;
+    initialY = touch.clientY - controlContainer.offsetTop;
+  }
+
+  function handleTouchMove(event) {
+    if (!isTouched) return;
+
+    var touch = event.touches[0];
+    var currentX = touch.clientX - controlContainer.offsetLeft;
+    var currentY = touch.clientY - controlContainer.offsetTop;
+
+    moveInnerStick(currentX, currentY);
+    sendCommandBasedOnSector(currentX, currentY);
+    event.preventDefault();
+    if (event.touches.length == 0) {
+      resetInnerStickPosition();
+    }
+  }
+
+  function handleTouchEnd() {
+    isTouched = false;
+    resetInnerStickPosition();
+  }
+
+  // Mouse event handlers
+  function handleMouseDown(event) {
+    isTouched = true;
+    initialX = event.clientX - controlContainer.offsetLeft;
+    initialY = event.clientY - controlContainer.offsetTop;
+  }
+
+  function handleMouseMove(event) {
+    if (!isTouched) return;
+
+    var currentX = event.clientX - controlContainer.offsetLeft;
+    var currentY = event.clientY - controlContainer.offsetTop;
+
+    moveInnerStick(currentX, currentY);
+    sendCommandBasedOnSector(currentX, currentY);
+    if (!event.buttons) {
+      resetInnerStickPosition();
+    }
+  }
+
+  function handleMouseUp() {
+    isTouched = false;
+    resetInnerStickPosition();
+  }
+
+  // Function to move the inner stick
+  function moveInnerStick(x, y) {
+    var deltaX = x - initialX;
+    var deltaY = y - initialY;
+
+    // Ensure the inner stick stays within the bounds of the container
+    var distance = Math.min(
+      Math.hypot(deltaX, deltaY),
+      controlContainer.clientWidth / 2 - innerStick.clientWidth / 2
+    );
+
+    var angle = Math.atan2(deltaY, deltaX);
+    var newX = Math.cos(angle) * distance + controlContainer.clientWidth / 2;
+    var newY = Math.sin(angle) * distance + controlContainer.clientHeight / 2;
+
+    innerStick.style.left = newX + 'px';
+    innerStick.style.top = newY + 'px';
+  }
+
+  // Function to reset the inner stick to the center
+  function resetInnerStickPosition() {
+    innerStick.style.left = '50%';
+    innerStick.style.top = '50%';
+    sendCommand('/move/stop');
+  }
+
+  var lastcommand;
+
+  // Function to send a command (replace with actual command logic)
+  function sendCommand(command) {
+
+    if (lastcommand !== command) {
+      lastcommand = command;
+      console.log('Command Sent:', command);
+
+      // Vollständige URL zum Flask-Server
+      var url = 'http://192.168.4.1:5000' + command;  // Bitte die IP-Adresse und Portnummer anpassen
+
+      // AJAX-Anfrage erstellen
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);  // URL anpassen, um sie an Ihren Server anzupassen
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          if (xhr.status === 200) {
+            console.log('Command successfully sent to server:' + command);
+          } else {
+            console.error('Failed to send command to server.');
+          }
+        }
+      };
+      xhr.send();
+    }
+  }
+
+  // ich hab dich gaaaaaanz dolle lieb bubu, ich bin super stolz auf dich, du machst das echt super duper toll
+
+
+  // Function to log the inner stick position to the console
+  function sendCommandBasedOnSector(x, y) {
+    var deltaX = x - controlContainer.clientWidth / 2;
+    var deltaY = y - controlContainer.clientHeight / 2;
+
+    // Calculate the angle of the inner stick
+    var angle = Math.atan2(deltaY, deltaX);
+    var angleDeg = (angle * 180) / Math.PI;
+
+    // Convert negative angles to positive for simplicity
+    if (angleDeg < 0) {
+      angleDeg += 360;
+    }
+
+    // Determine the sector based on the angle
+    var sector = Math.floor((angleDeg + 22.5) / 45) % 8;
+
+    // Send a command based on the sector
+    switch (sector) {
+      case 0: // Right
+        sendCommand('/move/right');
+        break;
+      case 1: // Back-Right
+        sendCommand('/move/back-right');
+        break;
+      case 2: // Back
+        sendCommand('/move/back');
+        break;
+      case 3: // Back-Left
+        sendCommand('/move/back-left');
+        break;
+      case 4: // Left
+        sendCommand('/move/left');
+        break;
+      case 5: // Front-Left
+        sendCommand('/move/front-left');
+        break;
+      case 6: // Forward
+        sendCommand('/move/Front');
+        break;
+      case 7: // Front-Right
+        sendCommand('/move/front-right');
+        break;
+    }
+  }
+</script>
+
+</body>
+</html>

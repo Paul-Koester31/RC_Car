@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bluetooth Controller Auswahl</title>
+</head>
+<body>
+<h1>Verfügbare Bluetooth-Controller</h1>
+<form action="/connect" method="post">
+  <select name="controller">
+    {% for addr, name in controllers %}
+    <option value="{{ addr }}">{{ name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Verbinden</button>
+</form>
+</body>
+</html>
